@@ -1,6 +1,6 @@
 # rehtracker_flutter
 
-A new Flutter project.
+This is the mobile app part of my Master's thesis project. Will update README.md as soon as possible.
 
 ## Getting Started
 
