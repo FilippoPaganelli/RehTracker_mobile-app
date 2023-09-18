@@ -3,27 +3,37 @@ import 'package:flutter/services.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:rehtracker_flutter/pages/signin.dart';
 import 'package:rehtracker_flutter/pages/widgets.dart';
+import 'package:rehtracker_flutter/utils/auth.dart';
 import '../utils/colours.dart' as colours;
 
 class Dashboard extends StatelessWidget {
   const Dashboard({Key? key}) : super(key: key);
 
-  Future<void> _checkPermissions() async {
-    final locStatus = await Permission.locationWhenInUse.serviceStatus;
-    final isGpsOn = locStatus == ServiceStatus.enabled;
-    if (!isGpsOn) {
+  Future<void> _checkBluetoothPermission() async {
+    Permission.bluetoothConnect.status.then((status) async {
+      if (!status.isGranted) {
+        await Permission.bluetoothConnect.request();
+      }
+    });
+  }
+
+  Future<void> _checkLocationPermission() async {
+    final locationStatus = await Permission.locationWhenInUse.serviceStatus;
+    final isLocationGranted = locationStatus.isEnabled;
+
+    if (isLocationGranted) {
       return;
     }
 
     final status = await Permission.locationWhenInUse.request();
+
     if (status == PermissionStatus.granted) {
       return;
-    } else if (status == PermissionStatus.denied) {
-      await openAppSettings();
-    } else if (status == PermissionStatus.permanentlyDenied) {
-      await openAppSettings();
     }
+
+    await openAppSettings();
   }
 
   @override
@@ -34,10 +44,14 @@ class Dashboard extends StatelessWidget {
             initialData: BluetoothState.unknown,
             builder: (c, snapshot) {
               final state = snapshot.data;
-              _checkPermissions();
+
+              _checkBluetoothPermission();
+              // _checkLocationPermission();
+
               if (state == BluetoothState.on) {
                 return const FindDevicesScreen();
               }
+
               return BluetoothOffScreen(
                 state: state!,
                 key: Key(UniqueKey().toString()),
@@ -55,24 +69,23 @@ class BluetoothOffScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: colours.GRADIENT_2,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(
-              Icons.bluetooth_disabled,
-              size: 150.0,
-              color: Color.fromARGB(187, 255, 255, 255),
-            ),
-            Text(
-              'Bluetooth is ${(state.toString().substring(15) == 'turningOn' ? 'turning on' : state.toString().substring(15))}.',
-              style: GoogleFonts.sora(fontSize: 22, color: Colors.white),
-            ),
-          ],
-        ),
-      ),
-    );
+        backgroundColor: colours.GRADIENT_2,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Icon(
+                Icons.bluetooth_disabled,
+                size: 150.0,
+                color: Color.fromARGB(187, 255, 255, 255),
+              ),
+              Text(
+                'Bluetooth is ${(state.toString().substring(15) == 'turningOn' ? 'turning on' : state.toString().substring(15))}.',
+                style: GoogleFonts.sora(fontSize: 22, color: Colors.white),
+              ),
+            ],
+          ),
+        ));
   }
 }
 
@@ -111,7 +124,7 @@ class _FindDevicesScreenState extends State<FindDevicesScreen> {
           backgroundColor: colours.GRADIENT_2),
       body: RefreshIndicator(
         onRefresh: () =>
-            FlutterBlue.instance.startScan(timeout: const Duration(seconds: 5)),
+            FlutterBlue.instance.startScan(timeout: const Duration(seconds: 3)),
         child: SingleChildScrollView(
           child: Column(
             children: <Widget>[
@@ -152,7 +165,7 @@ class _FindDevicesScreenState extends State<FindDevicesScreen> {
               ),
               StreamBuilder<List<ScanResult>>(
                 stream: FlutterBlue.instance.scanResults,
-                initialData: [],
+                initialData: const [],
                 builder: (c, snapshot) => Column(
                   children: snapshot.data!
                       .map(
@@ -185,7 +198,8 @@ class _FindDevicesScreenState extends State<FindDevicesScreen> {
         stream: FlutterBlue.instance.isScanning,
         initialData: false,
         builder: (c, snapshot) {
-          if (snapshot.data!) {
+          if (snapshot.connectionState == ConnectionState.done &&
+              snapshot.data!) {
             return FloatingActionButton(
               onPressed: () => FlutterBlue.instance.stopScan(),
               backgroundColor: colours.GRADIENT_4,
