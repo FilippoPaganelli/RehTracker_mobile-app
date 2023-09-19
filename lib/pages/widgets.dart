@@ -171,15 +171,26 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
     return 'Wrist rotation';
   }
 
+  bool isExerciseTypeCharacteristic(String characteristicId) {
+    return characteristicId.toLowerCase() ==
+        'b964a50a-0002-4d37-97eb-971bf5233a98';
+  }
+
+  bool isExerciseValueCharacteristic(String characteristicId) {
+    return characteristicId.toLowerCase() ==
+        'b964a50a-0001-4d37-97eb-971bf5233a98';
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isMainChar = (widget.characteristic.uuid.toString().toLowerCase() ==
-        'b964a50a-20fa-4d37-97eb-971bf5233a98');
-    String charName = isMainChar ? 'Value' : 'Type';
+    bool isValueCharacteristic =
+        isExerciseValueCharacteristic(widget.characteristic.uuid.toString());
+    String characteristicName = isValueCharacteristic ? 'Value' : 'Type';
 
-// MUSCLE EXERCISE
-    if (isMainChar) {
+    // main characteristic carrying the exercise value
+    if (isValueCharacteristic) {
       widget.characteristic.setNotifyValue(true);
+
       return StreamBuilder<List<int>>(
         stream: widget.characteristic.value,
         initialData: widget.characteristic.lastValue,
@@ -192,7 +203,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    charName,
+                    characteristicName,
                     style: GoogleFonts.sora(fontSize: 17),
                   ),
                 ],
@@ -211,17 +222,13 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
                     style: GoogleFonts.sora(fontSize: 17),
                   ),
                   onPressed: () {
-                    try {
-                      setState(() {
-                        if (mainCharButtonText == 'Start') {
-                          mainCharButtonText = 'End';
-                        } else {
-                          mainCharButtonText = 'Start';
-                        }
-                      });
-                    } catch (e) {
-                      print('error');
-                    }
+                    setState(() {
+                      if (mainCharButtonText == 'Start') {
+                        mainCharButtonText = 'End';
+                      } else {
+                        mainCharButtonText = 'Start';
+                      }
+                    });
                   },
                 ),
               ],
@@ -229,9 +236,10 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
           );
         },
       );
-    } else
-// ROTATION EXERCISE
-    {
+    } else if (isExerciseTypeCharacteristic(
+      widget.characteristic.uuid.toString(),
+    )) {
+      // exercise type characteristic
       return StreamBuilder<List<int>>(
         stream: widget.characteristic.value,
         initialData: widget.characteristic.lastValue,
@@ -244,7 +252,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    charName,
+                    characteristicName,
                     style: GoogleFonts.sora(fontSize: 17),
                   ),
                 ],
@@ -275,6 +283,8 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
         },
       );
     }
+
+    return const SizedBox(height: 0);
   }
 }
 
