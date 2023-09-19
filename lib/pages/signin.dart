@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:rehtracker_flutter/utils/auth.dart';
 
 import '../utils/colours.dart' as colours;
@@ -107,8 +108,12 @@ Widget _buildSigninButton(
               context, "Error", "Wrong username or password, try again.");
         } else {
           await writeAuthToken(token);
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const Dashboard()));
+          // ignore: use_build_context_synchronously
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      Dashboard(flutterBlue: FlutterBlue.instance)));
         }
       },
       style: ElevatedButton.styleFrom(
@@ -170,7 +175,8 @@ class _SigninScreenState extends State<SigninScreen> {
                                   ConnectionState.done &&
                               snapshot.hasData) {
                             if (snapshot.data!) {
-                              return const Dashboard();
+                              return Dashboard(
+                                  flutterBlue: FlutterBlue.instance);
                             }
 
                             // no valid auth token found

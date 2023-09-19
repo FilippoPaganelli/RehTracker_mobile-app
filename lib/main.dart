@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rehtracker_flutter/pages/dashboard.dart';
 import 'pages/signin.dart';
@@ -18,7 +19,9 @@ class FlutterBlueApp extends StatelessWidget {
     return MaterialApp(
       initialRoute: routes.signin,
       routes: {
-        routes.dashboard: (context) => const Dashboard(),
+        routes.dashboard: (context) => Dashboard(
+              flutterBlue: FlutterBlue.instance,
+            ),
         routes.signin: (context) => const SigninScreen()
       },
       debugShowCheckedModeBanner: false,
