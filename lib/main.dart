@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rehtracker_flutter/pages/dashboard.dart';
 import 'pages/signin.dart';
@@ -12,13 +12,17 @@ void main() {
 class FlutterBlueApp extends StatelessWidget {
   const FlutterBlueApp({Key? key}) : super(key: key);
 
+  static const routes = (dashboard: '/', signin: '/sign-in');
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: '/sign-in',
+      initialRoute: routes.signin,
       routes: {
-        '/': (context) => const Dashboard(),
-        '/sign-in': (context) => const SigninScreen()
+        routes.dashboard: (context) => Dashboard(
+              flutterBlue: FlutterBlue.instance,
+            ),
+        routes.signin: (context) => const SigninScreen()
       },
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

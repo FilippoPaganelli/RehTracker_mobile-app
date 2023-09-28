@@ -1,7 +1,6 @@
-// ignore_for_file: no_leading_underscores_for_local_identifiers, use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:rehtracker_flutter/utils/auth.dart';
 
 import '../utils/colours.dart' as colours;
@@ -90,29 +89,37 @@ void displayDialog(BuildContext context, String title, String text) =>
     );
 
 Widget _buildSigninButton(
-    BuildContext context,
-    TextEditingController _usernameController,
-    TextEditingController _passwordController) {
+  BuildContext context,
+  TextEditingController usernameController,
+  TextEditingController passwordController,
+) {
   return SizedBox(
     width: double.infinity,
     child: ElevatedButton(
       onPressed: () async {
-        var username = _usernameController.text;
-        var password = _passwordController.text;
-        MyResponse? res = await attemptLogIn(username, password);
-        if (res == null) {
+        final username = usernameController.text;
+        final password = passwordController.text;
+
+        SignInResponse? res = await signIn(username, password);
+        final token = res?.content;
+
+        if (res == null || token == null) {
           displayDialog(
               context, "Error", "Wrong username or password, try again.");
         } else {
-          writeAuthToken(res.content).then((value) => print('-token saved'));
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const Dashboard()));
+          await writeAuthToken(token);
+          // ignore: use_build_context_synchronously
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      Dashboard(flutterBlue: FlutterBlue.instance)));
         }
       },
       style: ElevatedButton.styleFrom(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          primary: Colors.white,
+          backgroundColor: Colors.white,
           padding: const EdgeInsets.all(15)),
       child: const Text(
         'Sign in',
@@ -125,13 +132,13 @@ Widget _buildSigninButton(
 class _SigninScreenState extends State<SigninScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  late final Image logo;
+  late final Image _logo;
+  Future<bool> isSignedIn = signedIn();
 
   @override
   void initState() {
-    logo = Image.asset(
+    _logo = Image.asset(
       'assets/logo_full_transp_bg.png',
-      scale: 5,
     );
     super.initState();
   }
@@ -143,56 +150,83 @@ class _SigninScreenState extends State<SigninScreen> {
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
         child: GestureDetector(
-          child: Stack(
-            children: <Widget>[
-              Container(
-                  height: double.infinity,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colours.GRADIENT_1,
-                        colours.GRADIENT_2,
-                        colours.GRADIENT_3,
-                        colours.GRADIENT_4
-                      ],
-                    ),
+            child: Stack(
+          children: <Widget>[
+            Container(
+                height: double.infinity,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colours.GRADIENT_1,
+                      colours.GRADIENT_2,
+                      colours.GRADIENT_3,
+                      colours.GRADIENT_4
+                    ],
                   ),
-                  child: Center(
-                    // padding: const EdgeInsets.symmetric(
-                    //     horizontal: 50, vertical: 150),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        SizedBox(
-                          height: 125,
-                          width: 300,
-                          child: logo,
-                        ),
-                        const SizedBox(height: 60),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 50),
-                          child: _buildUsernameInput(_usernameController),
-                        ),
-                        const SizedBox(height: 25),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 50),
-                          child: _buildPasswordInput(_passwordController),
-                        ),
-                        const SizedBox(height: 100),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 50),
-                          child: _buildSigninButton(context,
-                              _usernameController, _passwordController),
-                        )
-                      ],
-                    ),
-                  ))
-            ],
-          ),
-        ),
+                ),
+                child: Center(
+                    child: FutureBuilder<bool>(
+                        future: isSignedIn,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                                  ConnectionState.done &&
+                              snapshot.hasData) {
+                            if (snapshot.data!) {
+                              return Dashboard(
+                                  flutterBlue: FlutterBlue.instance);
+                            }
+
+                            // no valid auth token found
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                SizedBox(
+                                  height: 125,
+                                  width: 300,
+                                  child: _logo,
+                                ),
+                                const SizedBox(height: 60),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 50),
+                                  child:
+                                      _buildUsernameInput(_usernameController),
+                                ),
+                                const SizedBox(height: 25),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 50),
+                                  child:
+                                      _buildPasswordInput(_passwordController),
+                                ),
+                                const SizedBox(height: 100),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 50),
+                                  child: _buildSigninButton(context,
+                                      _usernameController, _passwordController),
+                                )
+                              ],
+                            );
+                          } else {
+                            return const Center(
+                                child: SizedBox(
+                              height: 50,
+                              width: 50,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                backgroundColor: colours.GRADIENT_1,
+                                strokeWidth: 5,
+                              ),
+                              // ),
+                            ));
+                          }
+                        }))),
+          ],
+        )),
       ),
     );
   }

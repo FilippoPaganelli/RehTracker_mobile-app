@@ -2,31 +2,25 @@ import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const storage = FlutterSecureStorage();
+const authTokenKey = "auth-token";
 
-Future<dynamic> readCredentials() async {
-  if (await storage.containsKey(key: "username") == false) return null;
-  String user = (await storage.read(key: "username"))!;
-  String pass = (await storage.read(key: "password"))!;
-  return Credentials(user, pass);
+Future<void> deleteAuthToken() async {
+  await storage.delete(key: authTokenKey);
 }
 
-Future<dynamic> readAuthToken() async {
-  // await storage.deleteAll();
-  if (await storage.containsKey(key: "auth-token") == false) {
-    print('-token not found');
-    return '';
-  }
-  String tok = (await storage.read(key: "auth-token"))!;
-  return tok;
+Future<String?> readAuthToken() async {
+  String? token = await storage.read(key: authTokenKey);
+
+  return token;
 }
 
-Future<void> writeCredentials(String user, String pass) async {
-  await storage.write(key: "username", value: user);
-  await storage.write(key: "password", value: pass);
+Future<void> writeCredentials(String username, String password) async {
+  await storage.write(key: "username", value: username);
+  await storage.write(key: "password", value: password);
 }
 
-Future<void> writeAuthToken(String tok) async {
-  await storage.write(key: "auth-token", value: tok);
+Future<void> writeAuthToken(String token) async {
+  await storage.write(key: authTokenKey, value: token);
 }
 
 class AuthToken {

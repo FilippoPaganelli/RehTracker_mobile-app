@@ -15,7 +15,7 @@ class ScanResultTile extends StatelessWidget {
   final VoidCallback onTap;
 
   Widget _buildTitle(BuildContext context) {
-    if (result.device.name.length > 0) {
+    if (result.device.name.isNotEmpty) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,7 +26,7 @@ class ScanResultTile extends StatelessWidget {
           ),
           Text(
             result.device.id.toString(),
-            style: Theme.of(context).textTheme.caption,
+            style: Theme.of(context).textTheme.bodySmall,
           )
         ],
       );
@@ -37,11 +37,11 @@ class ScanResultTile extends StatelessWidget {
 
   Widget _buildAdvRow(BuildContext context, String title, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(title, style: Theme.of(context).textTheme.caption),
+          Text(title, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(
             width: 12.0,
           ),
@@ -133,7 +133,7 @@ class ServiceTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              '${serviceName}',
+              serviceName,
               style: GoogleFonts.sora(fontSize: 18),
             ),
           ],
@@ -171,15 +171,26 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
     return 'Wrist rotation';
   }
 
+  bool isExerciseTypeCharacteristic(String characteristicId) {
+    return characteristicId.toLowerCase() ==
+        'b964a50a-0002-4d37-97eb-971bf5233a98';
+  }
+
+  bool isExerciseValueCharacteristic(String characteristicId) {
+    return characteristicId.toLowerCase() ==
+        'b964a50a-0001-4d37-97eb-971bf5233a98';
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isMainChar = (widget.characteristic.uuid.toString().toLowerCase() ==
-        'b964a50a-20fa-4d37-97eb-971bf5233a98');
-    String charName = isMainChar ? 'Value' : 'Type';
+    bool isValueCharacteristic =
+        isExerciseValueCharacteristic(widget.characteristic.uuid.toString());
+    String characteristicName = isValueCharacteristic ? 'Value' : 'Type';
 
-// MUSCLE EXERCISE
-    if (isMainChar) {
+    // main characteristic carrying the exercise value
+    if (isValueCharacteristic) {
       widget.characteristic.setNotifyValue(true);
+
       return StreamBuilder<List<int>>(
         stream: widget.characteristic.value,
         initialData: widget.characteristic.lastValue,
@@ -192,7 +203,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    charName,
+                    characteristicName,
                     style: GoogleFonts.sora(fontSize: 17),
                   ),
                 ],
@@ -211,17 +222,13 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
                     style: GoogleFonts.sora(fontSize: 17),
                   ),
                   onPressed: () {
-                    try {
-                      setState(() {
-                        if (mainCharButtonText == 'Start') {
-                          mainCharButtonText = 'End';
-                        } else {
-                          mainCharButtonText = 'Start';
-                        }
-                      });
-                    } catch (e) {
-                      print('error');
-                    }
+                    setState(() {
+                      if (mainCharButtonText == 'Start') {
+                        mainCharButtonText = 'End';
+                      } else {
+                        mainCharButtonText = 'Start';
+                      }
+                    });
                   },
                 ),
               ],
@@ -229,9 +236,10 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
           );
         },
       );
-    } else
-// ROTATION EXERCISE
-    {
+    } else if (isExerciseTypeCharacteristic(
+      widget.characteristic.uuid.toString(),
+    )) {
+      // exercise type characteristic
       return StreamBuilder<List<int>>(
         stream: widget.characteristic.value,
         initialData: widget.characteristic.lastValue,
@@ -244,7 +252,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    '$charName',
+                    characteristicName,
                     style: GoogleFonts.sora(fontSize: 17),
                   ),
                 ],
@@ -275,6 +283,8 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
         },
       );
     }
+
+    return const SizedBox(height: 0);
   }
 }
 
@@ -297,7 +307,7 @@ class DescriptorTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('Descriptor'),
+          const Text('Descriptor'),
           Text(
             '0x${descriptor.uuid.toString().toUpperCase().substring(4, 8)}',
           )
@@ -312,14 +322,14 @@ class DescriptorTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.file_download,
               // color: Theme.of(context).iconTheme.color.withOpacity(0.5),
             ),
             onPressed: onReadPressed,
           ),
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.file_upload,
               // color: Theme.of(context).iconTheme.color.withOpacity(0.5),
             ),
@@ -346,7 +356,7 @@ class AdapterStateTile extends StatelessWidget {
           'Bluetooth adapter is ${state.toString().substring(15)}',
           // style: Theme.of(context).primaryTextTheme.subhead,
         ),
-        trailing: Icon(
+        trailing: const Icon(
           Icons.error,
           // color: Theme.of(context).primaryTextTheme.subhead.color,
         ),
