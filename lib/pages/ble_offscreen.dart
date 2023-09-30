@@ -8,6 +8,15 @@ class BluetoothOffScreen extends StatelessWidget {
 
   final BluetoothState state;
 
+  String _getStatusText(BluetoothState state) {
+    final formattedState = state.toString().substring(15);
+    return formattedState == 'turningOn'
+        ? 'turning on'
+        : formattedState == 'turningOff'
+            ? 'turning off'
+            : state.toString().substring(15);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,7 +31,7 @@ class BluetoothOffScreen extends StatelessWidget {
                 color: Color.fromARGB(187, 255, 255, 255),
               ),
               Text(
-                'Bluetooth is ${(state.toString().substring(15) == 'turningOn' ? 'turning on' : state.toString().substring(15))}.',
+                'Bluetooth is ${_getStatusText(state)}.',
                 style: GoogleFonts.sora(fontSize: 22, color: Colors.white),
               ),
             ],
