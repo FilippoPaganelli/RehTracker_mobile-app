@@ -23,58 +23,63 @@ class _DashboardState extends State<Dashboard> {
     super.initState();
   }
 
-  Future<void> _checkBluetoothPermissions() async {
+  Future<void> _checkBluetoothConnectPermission() async {
     Permission.bluetoothConnect.status.then((status) async {
+      if (status.isGranted) {
+        return;
+      }
       if (!status.isGranted) {
-        await Permission.bluetoothConnect.request();
+        Permission.bluetoothConnect.request();
       }
     });
+  }
 
+  Future<void> _checkBluetoothScanPermission() async {
     Permission.bluetoothScan.status.then((status) async {
+      if (status.isGranted) {
+        return;
+      }
       if (!status.isGranted) {
-        await Permission.bluetoothScan.request();
+        Permission.bluetoothScan.request();
       }
     });
   }
 
   Future<void> _checkLocationPermission() async {
-    final locationStatus = await Permission.locationWhenInUse.serviceStatus;
-    final isLocationGranted = locationStatus.isEnabled;
-
-    if (isLocationGranted) {
-      return;
-    }
-
-    final status = await Permission.locationWhenInUse.request();
-
-    if (status == PermissionStatus.granted) {
-      return;
-    }
-
-    await openAppSettings();
+    Permission.locationWhenInUse.status.then((status) async {
+      if (status.isGranted) {
+        return;
+      }
+      if (!status.isGranted) {
+        Permission.locationWhenInUse.request();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-        child: StreamBuilder<BluetoothState>(
-            stream: widget.flutterBlue.state,
-            initialData: BluetoothState.unknown,
-            builder: (c, snapshot) {
-              final state = snapshot.data;
+        child: Builder(builder: (context) {
+          return StreamBuilder<BluetoothState>(
+              stream: widget.flutterBlue.state,
+              initialData: BluetoothState.unknown,
+              builder: (c, snapshot) {
+                final state = snapshot.data;
 
-              _checkBluetoothPermissions();
-              // _checkLocationPermission();
+                _checkBluetoothScanPermission();
+                _checkBluetoothConnectPermission();
+                _checkLocationPermission();
 
-              if (state == BluetoothState.on) {
-                return FindDevicesScreen(flutterBlue: widget.flutterBlue);
-              }
+                if (state == BluetoothState.on) {
+                  return FindDevicesScreen(flutterBlue: widget.flutterBlue);
+                }
 
-              return BluetoothOffScreen(
-                state: state!,
-                key: Key(UniqueKey().toString()),
-              );
-            }),
+                return BluetoothOffScreen(
+                  state: state!,
+                  key: Key(UniqueKey().toString()),
+                );
+              });
+        }),
         onWillPop: () async => false);
   }
 }
